@@ -14,7 +14,6 @@ import { PaneLayout } from '../services/settings';
 import { CharCount } from './CharCount';
 import { Checkbox } from './ui/Checkbox';
 
-
 interface GrammarCheckerProps {
   preserveInformalityDefault: boolean;
   layout: PaneLayout;
@@ -117,12 +116,13 @@ export function GrammarChecker({
             />
           </div>
           <div className='p-4 border-t border-gray-50 dark:border-neutral-800/50 bg-gray-50/50 dark:bg-neutral-800/30 transition-colors'>
-            <div class='flex justify-between items-center gap-3'>
-              <div className='flex flex-col gap-3'>
+            <div class='flex items-start flex-col sm:flex-row sm:justify-between sm:items-center gap-3'>
+              <div className='flex flex-col gap-3 mb-3 sm:mb-0'>
                 <Checkbox
                   checked={isInformal}
                   onChange={setIsInformal}
-                  label="Keep it informal"
+                  label='Keep it informal'
+                  description='Reserve your tone'
                 />
               </div>
 
