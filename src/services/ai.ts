@@ -4,20 +4,71 @@ import { z } from 'zod';
 
 import { getSettings } from './settings';
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-if (!apiKey) {
-  console.warn('Lumina: VITE_GEMINI_API_KEY is missing from the environment.');
+const APP_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+const PROMO_CODE = 'ADMINTEST';
+
+export async function verifyApiKey(
+  rawKey: string,
+): Promise<{ valid: boolean; error?: string }> {
+  const key = rawKey.trim();
+  if (!key) return { valid: false, error: 'Please enter an API key.' };
+
+  const actualKey = key === PROMO_CODE ? APP_API_KEY : key;
+  if (!actualKey)
+    return {
+      valid: false,
+      error: 'Promo key is not configured on this instance.',
+    };
+
+  try {
+    const google = createGoogleGenerativeAI({ apiKey: actualKey });
+    await generateText({
+      model: google('gemini-2.5-flash'),
+      prompt: 'Reply with the single word OK.',
+    });
+    return { valid: true };
+  } catch (err: any) {
+    const msg = err?.message || '';
+    if (msg.includes('API key not valid') || err?.status === 400)
+      return { valid: false, error: 'This API key is invalid.' };
+    if (err?.status === 403)
+      return {
+        valid: false,
+        error: 'This API key does not have access to Gemini.',
+      };
+    if (err?.status === 429)
+      return {
+        valid: false,
+        error: 'Rate limited — the key works but try again shortly.',
+      };
+    return {
+      valid: false,
+      error: msg || 'Verification failed. Please try again.',
+    };
+  }
 }
 
-const google = createGoogleGenerativeAI({
-  apiKey: apiKey || '',
-});
+function resolveApiKey(): string {
+  const settings = getSettings();
+  const userKey = settings.apiKey.trim();
 
-/**
- * Maximum character limit for input to stay within Gemini's 1M context window
- * 200,000 characters is roughly 50,000 tokens (conservative 4 chars/token estimate).
- * This leaves ~950k tokens for detailed system prompts and 65k output tokens.
- */
+  if (userKey === PROMO_CODE) {
+    return APP_API_KEY;
+  }
+
+  return userKey;
+}
+
+function getGoogleClient() {
+  const apiKey = resolveApiKey();
+  if (!apiKey) {
+    throw new Error(
+      'No API key configured. Please add your Gemini API key in Settings.',
+    );
+  }
+  return createGoogleGenerativeAI({ apiKey });
+}
+
 export const MAX_INPUT_CHARACTERS = 200000;
 
 function ensureSafeInput(text: string, label: string = 'Input') {
@@ -34,6 +85,7 @@ function ensureSafeInput(text: string, label: string = 'Input') {
 async function callAI(params: any, type: 'default' | 'pro' = 'default') {
   const settings = getSettings();
   const modelId = type === 'pro' ? settings.proModel : settings.model;
+  const google = getGoogleClient();
 
   try {
     const result = await generateText({
@@ -42,7 +94,6 @@ async function callAI(params: any, type: 'default' | 'pro' = 'default') {
     });
     return result as any;
   } catch (error: any) {
-    // Check for rate limit error (429)
     if (
       error?.status === 429 ||
       error?.statusCode === 429 ||
@@ -50,6 +101,14 @@ async function callAI(params: any, type: 'default' | 'pro' = 'default') {
     ) {
       throw new Error(
         'Lumina is currently receiving too many requests. Please wait a few seconds and try again (Rate Limit).',
+      );
+    }
+    if (
+      error?.status === 400 ||
+      error?.message?.includes('API key not valid')
+    ) {
+      throw new Error(
+        'Your API key appears to be invalid. Please check it in Settings.',
       );
     }
     throw error;

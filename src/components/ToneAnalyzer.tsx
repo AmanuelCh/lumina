@@ -95,7 +95,7 @@ export function ToneAnalyzer({ layout, optionsStyle }: ToneAnalyzerProps) {
     layout === 'side-by-side' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1';
 
   return (
-    <div className='flex flex-col gap-8 text-left'>
+    <div className='flex flex-col gap-8 text-left flex-1'>
       <header>
         <h1 className='text-4xl font-light tracking-tight mb-2 dark:text-white'>
           Tone Analyzer
@@ -152,9 +152,9 @@ export function ToneAnalyzer({ layout, optionsStyle }: ToneAnalyzerProps) {
         )}
       </AnimatePresence>
 
-      <div className={`grid gap-6 ${gridClass}`}>
+      <div className={`grid items-start gap-6 flex-1 ${gridClass}`}>
         {/* Input Section */}
-        <div className='bg-white dark:bg-neutral-900 rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-800 overflow-hidden flex flex-col transition-colors duration-300'>
+        <div className='bg-white dark:bg-neutral-900 rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-800 overflow-hidden flex flex-col transition-colors duration-300 h-full'>
           <div className='p-4 border-b border-gray-50 dark:border-neutral-800/50 bg-gray-50/50 dark:bg-neutral-800/30 flex justify-between items-center transition-colors'>
             <span className='text-sm font-medium text-gray-500 dark:text-neutral-400 font-sans'>
               {mode === 'analyze' ? 'Text to Analyze' : 'Text to Transform'}
@@ -229,7 +229,7 @@ export function ToneAnalyzer({ layout, optionsStyle }: ToneAnalyzerProps) {
         </div>
 
         {/* Output Section */}
-        <div className='bg-white dark:bg-neutral-900 rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-800 overflow-hidden flex flex-col min-h-[400px] transition-colors duration-300'>
+        <div className='bg-white dark:bg-neutral-900 rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-800 overflow-hidden flex flex-col min-h-[400px] max-h-[calc(100vh-12rem)] transition-colors duration-300 h-full'>
           <div className='p-4 border-b border-gray-50 dark:border-neutral-800/50 bg-gray-50/50 dark:bg-neutral-800/30 flex justify-between items-center'>
             <span className='text-sm font-medium text-gray-500 dark:text-neutral-400'>
               {mode === 'analyze' ? 'Analysis Results' : 'Transformed Text'}

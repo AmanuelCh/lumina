@@ -9,6 +9,7 @@ import { Translator } from './components/Translator';
 import { Dictionary } from './components/Dictionary';
 import { SettingsManager } from './components/SettingsManager';
 import { Sidebar } from './components/Sidebar';
+import { ApiKeyGate } from './components/ApiKeyGate';
 import {
   getSettings,
   saveSettings,
@@ -82,6 +83,17 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [settings, setActiveTab]);
 
+  // Show API key gate if no key is configured
+  if (!settings.apiKey.trim()) {
+    return (
+      <ApiKeyGate
+        onSubmit={(key) => {
+          updateSettings({ apiKey: key });
+        }}
+      />
+    );
+  }
+
   return (
     <div className='h-screen flex flex-col md:flex-row bg-[#fdfdfd] dark:bg-neutral-950 transition-colors duration-300 overflow-hidden'>
       <Sidebar
@@ -97,8 +109,8 @@ export default function App() {
 
       {/* Main Content */}
       <main className='flex-1 flex flex-col min-w-0 h-full overflow-y-auto'>
-        <div className='flex-1 p-6 md:p-12'>
-          <div className='max-w-5xl mx-auto'>
+        <div className='flex-1 p-6 md:p-12 flex flex-col'>
+          <div className='max-w-5xl mx-auto w-full flex-1 flex flex-col'>
             {activeTab === 'grammar' && (
               <GrammarChecker
                 preserveInformalityDefault={settings.preserveInformality}

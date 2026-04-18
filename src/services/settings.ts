@@ -19,6 +19,7 @@ export interface AppSettings {
   sidebarCollapsed: boolean;
   model: GeminiModel;
   proModel: GeminiModel;
+  apiKey: string;
 }
 
 const STORAGE_KEY = 'lumina_settings';
@@ -32,6 +33,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   sidebarCollapsed: false,
   model: 'gemini-3-flash-preview',
   proModel: 'gemini-3.1-pro-preview',
+  apiKey: '',
 };
 
 

@@ -108,7 +108,7 @@ export function Dictionary() {
   };
 
   return (
-    <div className='flex flex-col gap-8'>
+    <div className='flex flex-col gap-8 flex-1'>
       <header>
         <h1 className='text-4xl font-light tracking-tight mb-2 dark:text-white'>
           Dictionary
@@ -510,7 +510,7 @@ export function Dictionary() {
             key='empty'
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className='flex flex-col items-center justify-center py-24 text-gray-400 dark:text-neutral-500 gap-4'
+            className='flex-1 flex flex-col items-center justify-center text-gray-400 dark:text-neutral-500 gap-4'
           >
             <div className='w-16 h-16 rounded-full bg-gray-50 dark:bg-neutral-800/50 flex items-center justify-center'>
               <BookOpen

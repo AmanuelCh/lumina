@@ -176,7 +176,7 @@ export function Translator({ layout }: TranslatorProps) {
   };
 
   return (
-    <div className='flex flex-col gap-8'>
+    <div className='flex flex-col gap-8 flex-1'>
       <header>
         <h1 className='text-4xl font-light tracking-tight mb-2 dark:text-white'>
           Translate
@@ -216,9 +216,9 @@ export function Translator({ layout }: TranslatorProps) {
         />
       </div>
 
-      <div className={`grid gap-6 ${gridClass}`}>
+      <div className={`grid items-start gap-6 flex-1 ${gridClass}`}>
         {/* Input Section */}
-        <div className='bg-white dark:bg-neutral-900 rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-800 overflow-hidden flex flex-col transition-colors duration-300'>
+        <div className='bg-white dark:bg-neutral-900 rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-800 overflow-hidden flex flex-col transition-colors duration-300 h-full'>
           <div className='p-4 border-b border-gray-50 dark:border-neutral-800/50 bg-gray-50/50 dark:bg-neutral-800/30 flex justify-between items-center transition-colors'>
             <div className='flex items-center gap-2'>
               <span className='text-sm font-medium text-gray-500 dark:text-neutral-400 font-sans'>
@@ -288,7 +288,7 @@ export function Translator({ layout }: TranslatorProps) {
         </div>
 
         {/* Output Section */}
-        <div className='bg-white dark:bg-neutral-900 rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-800 overflow-hidden flex flex-col min-h-[400px] transition-colors duration-300'>
+        <div className='bg-white dark:bg-neutral-900 rounded-3xl shadow-sm border border-gray-100 dark:border-neutral-800 overflow-hidden flex flex-col min-h-[400px] max-h-[calc(100vh-12rem)] transition-colors duration-300 h-full'>
           <div className='p-4 border-b border-gray-50 dark:border-neutral-800/50 bg-gray-50/50 dark:bg-neutral-800/30 flex flex-wrap justify-between items-center'>
             <div className='flex items-center gap-3'>
               <span className='text-sm font-medium text-gray-500 dark:text-neutral-400'>

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { verifyApiKey } from '../services/ai';
 import {
   AppSettings,
   saveSettings,
@@ -17,6 +19,13 @@ import {
   Monitor,
   CheckCircle2,
   ListFilter,
+  Key,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  Loader2,
+  AlertCircle,
+  Trash2,
 } from 'lucide-react';
 
 import { motion } from 'motion/react';
@@ -30,6 +39,12 @@ interface SettingsProps {
 }
 
 export function SettingsManager({ settings, onUpdate }: SettingsProps) {
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [isEditingKey, setIsEditingKey] = useState(false);
+  const [draftKey, setDraftKey] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [keyError, setKeyError] = useState<string | null>(null);
+
   const handleUpdate = (update: Partial<AppSettings>) => {
     onUpdate(update);
     saveSettings(update);
@@ -180,6 +195,155 @@ export function SettingsManager({ settings, onUpdate }: SettingsProps) {
                 />
               </div>
 
+          </div>
+        </div>
+
+        {/* API Key Section */}
+        <div className='flex flex-col gap-4'>
+          <h2 className='text-sm font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-500'>
+            API Key
+          </h2>
+          <div className='bg-white dark:bg-neutral-900 p-6 rounded-3xl border border-gray-100 dark:border-neutral-800 flex flex-col gap-4 transition-colors'>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-3 font-medium dark:text-white'>
+                <Key size={18} className='text-gray-400' />
+                Gemini API Key
+              </div>
+              {settings.apiKey.trim() && !isEditingKey && (
+                <div className='flex items-center gap-2'>
+                  <button
+                    onClick={() => {
+                      setDraftKey(settings.apiKey);
+                      setIsEditingKey(true);
+                      setKeyError(null);
+                    }}
+                    className='text-xs font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors'
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleUpdate({ apiKey: '' })}
+                    className='text-gray-400 dark:text-neutral-500 hover:text-red-500 dark:hover:text-red-400 transition-colors'
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Current key display (when not editing) */}
+            {settings.apiKey.trim() && !isEditingKey && (
+              <>
+                <div className='flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-neutral-800 rounded-xl'>
+                  <span className='flex-1 text-sm font-mono text-gray-500 dark:text-neutral-400 truncate'>
+                    {showApiKey
+                      ? settings.apiKey
+                      : settings.apiKey.trim() === 'ADMINTEST'
+                        ? '••••••••••'
+                        : settings.apiKey.slice(0, 8) + '••••••••••••'}
+                  </span>
+                  <button
+                    type='button'
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className='text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors shrink-0'
+                  >
+                    {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <div className={`flex items-center gap-2 text-xs font-medium px-3 py-2 rounded-lg ${
+                  settings.apiKey.trim() === 'ADMINTEST'
+                    ? 'bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400'
+                    : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                }`}>
+                  <CheckCircle2 size={14} />
+                  {settings.apiKey.trim() === 'ADMINTEST'
+                    ? 'Using Lumina promo access'
+                    : 'Using your personal API key'}
+                </div>
+              </>
+            )}
+
+            {/* Edit / new key input */}
+            {(isEditingKey || !settings.apiKey.trim()) && (
+              <>
+                <div className='relative'>
+                  <input
+                    type={showApiKey ? 'text' : 'password'}
+                    value={draftKey}
+                    onChange={(e) => {
+                      setDraftKey(e.target.value);
+                      setKeyError(null);
+                    }}
+                    placeholder='AIzaSy... or promo code'
+                    disabled={isVerifying}
+                    className='w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-neutral-800 rounded-xl text-sm font-mono text-gray-800 dark:text-neutral-200 placeholder:text-gray-300 dark:placeholder:text-neutral-600 focus:outline-none focus:ring-2 focus:ring-violet-500/30 dark:focus:ring-violet-400/20 border border-transparent focus:border-violet-300 dark:focus:border-violet-700 transition-all disabled:opacity-50'
+                  />
+                  <button
+                    type='button'
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-neutral-500 hover:text-gray-600 dark:hover:text-neutral-300 transition-colors'
+                  >
+                    {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                {keyError && (
+                  <div className='flex items-center gap-2 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-3 py-2.5 rounded-lg'>
+                    <AlertCircle size={14} className='shrink-0' />
+                    {keyError}
+                  </div>
+                )}
+
+                <div className='flex items-center gap-3'>
+                  <button
+                    onClick={async () => {
+                      if (!draftKey.trim() || isVerifying) return;
+                      setIsVerifying(true);
+                      setKeyError(null);
+                      const result = await verifyApiKey(draftKey);
+                      setIsVerifying(false);
+                      if (result.valid) {
+                        handleUpdate({ apiKey: draftKey.trim() });
+                        setIsEditingKey(false);
+                        setDraftKey('');
+                      } else {
+                        setKeyError(result.error || 'Verification failed.');
+                      }
+                    }}
+                    disabled={!draftKey.trim() || isVerifying}
+                    className='px-4 py-2 rounded-xl text-xs font-medium flex items-center gap-2 transition-all bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed'
+                  >
+                    {isVerifying ? (
+                      <><Loader2 size={14} className='animate-spin' /> Verifying...</>
+                    ) : (
+                      'Verify & Save'
+                    )}
+                  </button>
+                  {isEditingKey && (
+                    <button
+                      onClick={() => {
+                        setIsEditingKey(false);
+                        setDraftKey('');
+                        setKeyError(null);
+                      }}
+                      className='px-4 py-2 rounded-xl text-xs font-medium text-gray-500 dark:text-neutral-400 hover:text-gray-700 dark:hover:text-neutral-200 transition-colors'
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+
+            <a
+              href='https://aistudio.google.com/apikey'
+              target='_blank'
+              rel='noopener noreferrer'
+              className='inline-flex items-center gap-1.5 text-xs font-medium text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300 transition-colors w-max'
+            >
+              Get a free key from Google AI Studio
+              <ExternalLink size={12} />
+            </a>
           </div>
         </div>
 
