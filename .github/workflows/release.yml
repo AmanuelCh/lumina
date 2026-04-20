@@ -67,4 +67,5 @@ jobs:
             See the assets below to download this version of Lumina.
           releaseDraft: true
           prerelease: false
+          tauriScript: npm run tauri
           args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
