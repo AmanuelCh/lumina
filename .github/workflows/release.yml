@@ -95,6 +95,6 @@ jobs:
           draft: true
           name: Lumina ${{ github.ref_name }}
           body: See the assets below to download this version of Lumina.
-          files: artifacts/*
+          files: artifacts/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
