@@ -15,9 +15,11 @@ jobs:
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
             bundles: nsis
+            artifact_glob: src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*.exe
           - platform: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             bundles: appimage
+            artifact_glob: src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage
 
     runs-on: ${{ matrix.platform }}
 
@@ -56,16 +58,37 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Build frontend
+        run: npm run build
+
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
+        run: npx tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumina-${{ matrix.target }}
+          path: ${{ matrix.artifact_glob }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: Lumina ${{ github.ref_name }}
+          body: See the assets below to download this version of Lumina.
+          files: artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: Lumina ${{ github.ref_name }}
-          releaseBody: |
-            See the assets below to download this version of Lumina.
-          releaseDraft: true
-          prerelease: false
-          tauriScript: npm run tauri
-          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
