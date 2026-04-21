@@ -21,15 +21,22 @@ A browser extension that brings all of Lumina's AI writing tools to every page �
 ```bash
 cd extension
 npm install
-npm run build
 ```
 
-The built extension is output to `extension/dist/`.
+**Chrome / Chromium:**
+```bash
+npm run build          # output → dist/
+```
+
+**Firefox:**
+```bash
+npm run build:firefox  # output → dist-firefox/
+```
 
 For live rebuilding during development:
-
 ```bash
-npm run dev
+npm run dev            # Chrome (watches dist/)
+npm run dev:firefox    # Firefox (watches dist-firefox/)
 ```
 
 ---
@@ -49,12 +56,15 @@ npm run dev
 
 ## Loading in Firefox
 
-1. Open `about:debugging` in Firefox.
-2. Click **This Firefox** in the left sidebar.
-3. Click **Load Temporary Add-on…**
-4. Navigate to `extension/dist/` and select the `manifest.json` file.
-5. The ✦ Lumina icon will appear in your toolbar.
-6. Click it, enter your Gemini API key when prompted, and you're ready.
+> Use the **Firefox build** (`npm run build:firefox` → `dist-firefox/`), not the Chrome build. The two differ in how the background script is declared.
+
+1. Run `npm run build:firefox` inside the `extension/` folder.
+2. Open `about:debugging` in Firefox.
+3. Click **This Firefox** in the left sidebar.
+4. Click **Load Temporary Add-on…**
+5. Navigate to `extension/dist-firefox/` and select the `manifest.json` file.
+6. The ✦ Lumina icon will appear in your toolbar.
+7. Click it, enter your Gemini API key when prompted, and you're ready.
 
 > Temporary add-ons are removed when Firefox closes. For a persistent install, the extension needs to be signed by Mozilla — see [Firefox Extension Workshop](https://extensionworkshop.com/documentation/publish/) for details.
 
@@ -62,12 +72,13 @@ npm run dev
 
 1. Open `about:config` in Firefox.
 2. Set `xpinstall.signatures.required` to `false` (only works in Firefox Developer Edition or Nightly).
-3. Build the extension as a `.zip`:
+3. Build and zip the Firefox output:
    ```bash
-   cd extension/dist
-   zip -r ../lumina-extension.zip .
+   npm run build:firefox
+   cd dist-firefox
+   zip -r ../lumina-firefox.zip .
    ```
-4. Drag and drop the `.zip` into Firefox, or install via `about:addons` → gear icon → **Install Add-on From File**.
+4. In Firefox: `about:addons` → gear icon → **Install Add-on From File** → select `lumina-firefox.zip`.
 
 ---
 

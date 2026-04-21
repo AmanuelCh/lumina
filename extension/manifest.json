@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Lumina",
   "version": "1.0.0",
-  "description": "AI-powered writing tools — grammar, paraphrasing, summarization, and more on every page.",
+  "description": "AI-powered writing tools: grammar, paraphrasing, summarization, and more on every page.",
   "permissions": ["contextMenus", "storage", "activeTab"],
   "host_permissions": ["https://generativelanguage.googleapis.com/*"],
   "action": {

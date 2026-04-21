@@ -208,18 +208,29 @@ function getWrap(): HTMLElement {
 
 function hideToolbar() {
   const wrap = document.getElementById('__lumina_toolbar__')?.shadowRoot?.querySelector('.wrap')
-  if (wrap) wrap.innerHTML = ''
+  if (wrap) wrap.replaceChildren()
 }
 
-function position(el: HTMLElement, rect: DOMRect) {
-  const margin = 8
-  const vpH = window.innerHeight
+// Position a fixed element near the cursor, keeping it inside the viewport.
+function positionNear(el: HTMLElement, cx: number, cy: number) {
+  const margin = 10
   const vpW = window.innerWidth
-  // Prefer below; fall back to above
-  let top = rect.bottom + margin + window.scrollY
-  let left = rect.left + window.scrollX
-  el.style.top = `${Math.min(top, vpH - 10)}px`
-  el.style.left = `${Math.max(margin, Math.min(left, vpW - 280))}px`
+  const vpH = window.innerHeight
+  // Measure after appending (or use generous fallback before it's in the DOM)
+  const w = el.offsetWidth  || (el.classList.contains('panel') ? 280 : 100)
+  const h = el.offsetHeight || (el.classList.contains('panel') ? 220 :  32)
+
+  let top  = cy + 18             // 18px below cursor
+  let left = cx + 6              // 6px right of cursor
+
+  if (left + w > vpW - margin) left = cx - w - 6   // flip left
+  if (top  + h > vpH - margin) top  = cy - h - 10  // flip above
+  if (left < margin) left = margin
+  if (top  < margin) top  = margin
+
+  el.style.position = 'fixed'
+  el.style.top  = `${top}px`
+  el.style.left = `${left}px`
 }
 
 // ── Selection capture ─────────────────────────────────────────────────────────
@@ -262,19 +273,27 @@ function replaceSelectedText(newText: string): boolean {
 
 // ── Toolbar rendering ─────────────────────────────────────────────────────────
 
-function showTrigger(rect: DOMRect, text: string) {
+function showTrigger(cx: number, cy: number, text: string) {
   const wrap = getWrap()
-  wrap.innerHTML = ''
+  wrap.replaceChildren()
 
   const btn = document.createElement('button')
   btn.className = 'trigger'
-  btn.innerHTML = '<span class="star">✦</span> Lumina'
-  position(btn, rect)
+  const star = document.createElement('span')
+  star.className = 'star'
+  star.textContent = '✦'
+  btn.appendChild(star)
+  btn.appendChild(document.createTextNode(' Lumina'))
+  // Position before appending so offsetWidth is still 0; positionNear uses fallback sizes.
   wrap.appendChild(btn)
+  positionNear(btn, cx, cy)
+
+  // Prevent mousedown from clearing the text selection.
+  btn.addEventListener('mousedown', (e) => e.preventDefault())
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation()
-    showPanel(rect, text)
+    showPanel(cx, cy, text)
   })
 }
 
@@ -284,19 +303,34 @@ type ToolState =
   | { kind: 'result'; text: string }
   | { kind: 'error'; message: string }
 
-function showPanel(rect: DOMRect, text: string) {
+function showPanel(cx: number, cy: number, text: string) {
   const wrap = getWrap()
-  wrap.innerHTML = ''
+  wrap.replaceChildren()
 
   const panel = document.createElement('div')
   panel.className = 'panel'
-  position(panel, rect)
+  // Hide until positioned to avoid a top-left flash for one frame.
+  panel.style.visibility = 'hidden'
   wrap.appendChild(panel)
+  // rAF lets the browser measure the panel before we position it.
+  requestAnimationFrame(() => {
+    positionNear(panel, cx, cy)
+    panel.style.visibility = 'visible'
+  })
+
+  // Prevent any click inside the panel from clearing the page text selection.
+  panel.addEventListener('mousedown', (e) => e.preventDefault())
 
   // Header
   const header = document.createElement('div')
   header.className = 'panel-header'
-  header.innerHTML = `<span class="panel-title"><span>✦</span> Lumina</span>`
+  const panelTitle = document.createElement('span')
+  panelTitle.className = 'panel-title'
+  const titleStar = document.createElement('span')
+  titleStar.textContent = '✦'
+  panelTitle.appendChild(titleStar)
+  panelTitle.appendChild(document.createTextNode(' Lumina'))
+  header.appendChild(panelTitle)
   const closeBtn = document.createElement('button')
   closeBtn.className = 'panel-close'
   closeBtn.textContent = '×'
@@ -320,7 +354,14 @@ function showPanel(rect: DOMRect, text: string) {
     const btn = document.createElement('button')
     btn.className = 'action-btn'
     btn.dataset.tool = tool.id
-    btn.innerHTML = `<span class="action-name">${tool.name}</span><span class="action-desc">${tool.desc}</span>`
+    const nameSpan = document.createElement('span')
+    nameSpan.className = 'action-name'
+    nameSpan.textContent = tool.name
+    const descSpan = document.createElement('span')
+    descSpan.className = 'action-desc'
+    descSpan.textContent = tool.desc
+    btn.appendChild(nameSpan)
+    btn.appendChild(descSpan)
     btn.addEventListener('click', () => runTool(tool.id, text, panel))
     actionsDiv.appendChild(btn)
   }
@@ -370,13 +411,24 @@ function showPanel(rect: DOMRect, text: string) {
   }
 
   function renderState(state: ToolState) {
-    resultArea.innerHTML = ''
+    resultArea.replaceChildren()
     if (state.kind === 'loading') {
-      resultArea.innerHTML = `<div class="result-loading"><div class="spinner"></div><span>Running ${state.label}…</span></div>`
+      const row = document.createElement('div')
+      row.className = 'result-loading'
+      const spinner = document.createElement('div')
+      spinner.className = 'spinner'
+      const label = document.createElement('span')
+      label.textContent = `Running ${state.label}…`
+      row.appendChild(spinner)
+      row.appendChild(label)
+      resultArea.appendChild(row)
       return
     }
     if (state.kind === 'error') {
-      resultArea.innerHTML = `<div class="result-error">${state.message}</div>`
+      const errEl = document.createElement('div')
+      errEl.className = 'result-error'
+      errEl.textContent = state.message
+      resultArea.appendChild(errEl)
       return
     }
     if (state.kind === 'result') {
@@ -420,7 +472,16 @@ function showPanel(rect: DOMRect, text: string) {
 
 let mouseUpTimeout: ReturnType<typeof setTimeout>
 
-document.addEventListener('mouseup', () => {
+document.addEventListener('mouseup', (e) => {
+  // In Shadow DOM, events from inside our toolbar are retargeted to the shadow
+  // host at the document level. Skip any mouseup that originates inside the toolbar
+  // so clicking trigger/action-buttons/close never re-triggers showTrigger().
+  const toolbarHost = document.getElementById('__lumina_toolbar__')
+  if (toolbarHost && e.target === toolbarHost) return
+
+  const cursorX = e.clientX
+  const cursorY = e.clientY
+
   clearTimeout(mouseUpTimeout)
   mouseUpTimeout = setTimeout(() => {
     const captured = captureSelection()
@@ -429,12 +490,8 @@ document.addEventListener('mouseup', () => {
       return
     }
     savedText = captured.text
-    const sel = window.getSelection()!
-    const range = sel.getRangeAt(0)
-    const rect = range.getBoundingClientRect()
-    if (rect.width === 0 && rect.height === 0) return
-    showTrigger(rect, savedText)
-  }, 150)
+    showTrigger(cursorX, cursorY, savedText)
+  }, 120)
 })
 
 document.addEventListener('keyup', (e) => {
@@ -446,12 +503,13 @@ document.addEventListener('keyup', (e) => {
     const captured = captureSelection()
     if (!captured) { hideToolbar(); return }
     savedText = captured.text
+    // For keyboard selections position near the end of the selected range.
     const sel = window.getSelection()!
     if (!sel.rangeCount) return
     const rect = sel.getRangeAt(0).getBoundingClientRect()
     if (rect.width === 0 && rect.height === 0) return
-    showTrigger(rect, savedText)
-  }, 150)
+    showTrigger(rect.right, rect.bottom, savedText)
+  }, 120)
 })
 
 // Close on outside click

@@ -36,13 +36,14 @@ export default function App() {
     })
   }, [])
 
-  // Check if background stored a pending context-menu tool
+  // Check if background stored a pending context-menu tool (uses local, not session,
+  // for Firefox compatibility).
   useEffect(() => {
-    chrome.storage.session.get(['pendingTool', 'pendingText'], (result) => {
-      if (result.pendingTool) {
-        setTab(result.pendingTool as PopupTab)
-        if (result.pendingText) setInitialText(result.pendingText)
-        chrome.storage.session.remove(['pendingTool', 'pendingText'])
+    chrome.storage.local.get(['_pendingTool', '_pendingText'], (result) => {
+      if (result._pendingTool) {
+        setTab(result._pendingTool as PopupTab)
+        if (result._pendingText) setInitialText(result._pendingText)
+        chrome.storage.local.remove(['_pendingTool', '_pendingText'])
       }
     })
   }, [])

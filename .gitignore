@@ -1,7 +1,10 @@
 node_modules/
 build/
 dist/
+dist-firefox/
 coverage/
+lumina-chrome.zip
+lumina-firefox.zip
 .DS_Store
 *.log
 .env*
