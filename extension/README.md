@@ -1,18 +1,18 @@
 # Lumina Browser Extension
 
-A browser extension that brings all of Lumina's AI writing tools to every page — grammar checking, paraphrasing, summarization, tone analysis, AI detection, translation, dictionary lookup, and prompt engineering.
+Brings all of Lumina's AI writing tools to every webpage — grammar checking, paraphrasing, summarization, tone analysis, AI detection, translation, dictionary lookup, and prompt engineering.
 
-## Features
+## How it works
 
-- **Popup panel** — Full access to all Lumina tools via the toolbar icon.
-- **Floating toolbar** — Select any text on a page and a small Lumina button appears. Click it for quick Grammar, Paraphrase, Summarize, or Translate actions inline.
-- **Context menu** — Right-click selected text for Grammar, Paraphrase, Summarize, Translate, and Humanize.
-- **Auto-fill** — Opening the popup while text is selected pre-fills the active tool's input.
+- **Popup** — click the ✦ toolbar icon for full access to all tools.
+- **Floating toolbar** — select any text on a page, click the pill button that appears near your cursor for instant Grammar, Paraphrase, Summarize, or Translate.
+- **Context menu** — right-click selected text → ✦ Lumina for quick access.
+- **Auto-fill** — opening the popup while text is selected pre-fills the active tool.
 
 ## Requirements
 
-- A [Google Gemini API key](https://aistudio.google.com/app/apikey) (free tier is sufficient).
-- Chrome 109+ or Firefox 109+.
+- A [Google Gemini API key](https://aistudio.google.com/app/apikey) (free tier works).
+- Chrome 109+ or Firefox 140+.
 
 ---
 
@@ -23,62 +23,60 @@ cd extension
 npm install
 ```
 
-**Chrome / Chromium:**
-```bash
-npm run build          # output → dist/
-```
-
-**Firefox:**
-```bash
-npm run build:firefox  # output → dist-firefox/
-```
-
-For live rebuilding during development:
-```bash
-npm run dev            # Chrome (watches dist/)
-npm run dev:firefox    # Firefox (watches dist-firefox/)
-```
+| Command | Output | Target |
+|---|---|---|
+| `npm run build` | `dist/` | Chrome / Chromium |
+| `npm run build:firefox` | `dist-firefox/` | Firefox 140+ |
+| `npm run dev` | `dist/` (watch) | Chrome dev |
+| `npm run dev:firefox` | `dist-firefox/` (watch) | Firefox dev |
+| `npm run zip` | `lumina-chrome.zip` + `lumina-firefox.zip` | Store upload |
 
 ---
 
 ## Loading in Chrome / Chromium
 
-1. Open `chrome://extensions` in your browser.
-2. Enable **Developer mode** (toggle in the top-right corner).
+1. Open `chrome://extensions`.
+2. Enable **Developer mode** (toggle, top-right).
 3. Click **Load unpacked**.
 4. Select the `extension/dist` folder.
-5. The ✦ Lumina icon will appear in your toolbar.
-6. Click it, enter your Gemini API key when prompted, and you're ready.
+5. The ✦ Lumina icon appears in your toolbar — click it and enter your Gemini API key.
 
-> To update after rebuilding: click the **reload** icon (↺) next to the extension on the extensions page.
+> After rebuilding: click the **↺** reload icon next to the extension on the extensions page.
 
 ---
 
 ## Loading in Firefox
 
-> Use the **Firefox build** (`npm run build:firefox` → `dist-firefox/`), not the Chrome build. The two differ in how the background script is declared.
+> Use the **Firefox build** — the Chrome build won't load in Firefox due to a different background script format.
 
-1. Run `npm run build:firefox` inside the `extension/` folder.
+1. Run `npm run build:firefox` inside `extension/`.
 2. Open `about:debugging` in Firefox.
 3. Click **This Firefox** in the left sidebar.
 4. Click **Load Temporary Add-on…**
-5. Navigate to `extension/dist-firefox/` and select the `manifest.json` file.
-6. The ✦ Lumina icon will appear in your toolbar.
-7. Click it, enter your Gemini API key when prompted, and you're ready.
+5. Navigate to `extension/dist-firefox/` and select `manifest.json`.
+6. The ✦ Lumina icon appears in your toolbar — click it and enter your Gemini API key.
 
-> Temporary add-ons are removed when Firefox closes. For a persistent install, the extension needs to be signed by Mozilla — see [Firefox Extension Workshop](https://extensionworkshop.com/documentation/publish/) for details.
+> Temporary add-ons are removed when Firefox closes. For a persistent install, the extension must be signed by Mozilla via [Firefox Extension Workshop](https://extensionworkshop.com/documentation/publish/).
 
-### Firefox persistent install (unsigned, for personal use)
+### Firefox — persistent install (Developer Edition / Nightly only)
 
-1. Open `about:config` in Firefox.
-2. Set `xpinstall.signatures.required` to `false` (only works in Firefox Developer Edition or Nightly).
-3. Build and zip the Firefox output:
-   ```bash
-   npm run build:firefox
-   cd dist-firefox
-   zip -r ../lumina-firefox.zip .
-   ```
-4. In Firefox: `about:addons` → gear icon → **Install Add-on From File** → select `lumina-firefox.zip`.
+1. Open `about:config` and set `xpinstall.signatures.required` to `false`.
+2. Build and zip: `npm run zip`
+3. Go to `about:addons` → gear icon → **Install Add-on From File** → select `lumina-firefox.zip`.
+
+---
+
+## Publishing
+
+Generate store-ready zips (forward-slash paths, no Windows backslash issues):
+
+```bash
+npm run zip
+# → lumina-chrome.zip   upload to Chrome Web Store
+# → lumina-firefox.zip  upload to Firefox Add-ons (AMO)
+```
+
+Both zip files are git-ignored and safe to regenerate anytime.
 
 ---
 
@@ -87,31 +85,32 @@ npm run dev:firefox    # Firefox (watches dist-firefox/)
 ```
 extension/
 ├── src/
-│   ├── services/
-│   │   ├── gemini.ts        # Direct Gemini REST API calls for all tools
-│   │   └── storage.ts       # chrome.storage.sync wrapper for settings
 │   ├── background/
-│   │   └── index.ts         # Service worker: context menu registration
+│   │   └── index.ts         # Context menu registration; stores pending tool
 │   ├── content/
-│   │   └── index.ts         # In-page floating toolbar (vanilla TS + Shadow DOM)
-│   └── popup/
-│       ├── index.html
-│       ├── index.css
-│       ├── main.tsx
-│       ├── App.tsx
-│       └── components/      # One component per tool + shared ToolShell
+│   │   └── index.ts         # Floating toolbar — vanilla TS + Shadow DOM
+│   ├── popup/
+│   │   ├── index.html
+│   │   ├── index.css
+│   │   ├── main.tsx
+│   │   ├── App.tsx
+│   │   └── components/      # One component per tool
+│   └── services/
+│       ├── gemini.ts         # Direct Gemini REST API calls
+│       └── storage.ts        # chrome.storage.sync wrapper
 ├── public/
-│   └── icons/               # PNG icons copied from the desktop app
-├── manifest.json            # MV3 manifest (Chrome + Firefox compatible)
-├── vite.config.ts
-├── package.json
-└── README.md
+│   └── icons/               # 32 / 64 / 128 px PNGs
+├── scripts/
+│   └── zip.mjs              # Cross-platform zip builder (no backslash paths)
+├── manifest.json            # MV3 manifest (Chrome + Firefox)
+├── vite.config.ts           # Dual-mode build (chrome / firefox)
+└── package.json
 ```
 
 ---
 
 ## Notes
 
-- This extension is completely independent from the desktop app — it has its own build system and no shared source files.
-- The extension stores your API key in `chrome.storage.sync`, which is encrypted by the browser and syncs across your signed-in devices.
-- All AI calls are made directly from the browser to `generativelanguage.googleapis.com` — no data passes through any intermediate server.
+- Completely independent from the desktop app — separate `package.json`, build system, and source files.
+- API key is stored in `chrome.storage.sync` — encrypted by the browser, syncs across signed-in devices.
+- All AI calls go directly from the browser to `generativelanguage.googleapis.com` — no data passes through any server.
