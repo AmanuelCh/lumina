@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Lexend', system-ui, sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
+}
+
+html, body, #root {
+  width: 400px;
+  height: 580px;
+  overflow: hidden;
+}
+
+* { box-sizing: border-box; }
+textarea { resize: none; }

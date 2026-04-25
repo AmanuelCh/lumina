@@ -1,9 +1,16 @@
 node_modules/
 build/
 dist/
+dist-firefox/
 coverage/
+lumina-chrome.zip
+lumina-firefox.zip
 .DS_Store
 *.log
 .env*
 !.env.example
 .dev
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
